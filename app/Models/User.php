@@ -35,4 +35,15 @@ class User extends Authenticatable
     protected $casts = [
         'phone' => E164PhoneNumberCast::class,
     ];
+
+    /**
+     * Route notifications for the Vonage channel.
+     *
+     * @param  \Illuminate\Notifications\Notification  $notification
+     * @return string
+     */
+    public function routeNotificationForVonage($notification)
+    {
+        return $this->phone;
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Wholesaler;
 
 use App\Http\Controllers\Controller;
+use App\Models\SmsVerification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,9 +23,6 @@ class AuthController extends Controller
             'sms_verification_code' => 'required',
         ]);
 
-        // for now we assume phone number is verified
-        // todo verify sms code
-        // todo automatically create user if not exists
         $phoneNumber = phone($request->input('phone'))->formatE164();
 
         $user = User::firstOrCreate(
@@ -32,9 +30,21 @@ class AuthController extends Controller
             ['name' => $phoneNumber],
         );
 
-        Auth::login($user);
+        /** @var SmsVerification $verificationCode */
+        $verificationCode = SmsVerification::where([
+            'phone'=>$phoneNumber,
+            'verification_code' => $request->input('sms_verification_code'),
+        ])->first();
 
-        return redirect()->route('dashboard.index');
+        if ($verificationCode) {
+            Auth::login($user);
+
+            $verificationCode->delete();
+
+            return redirect()->route('dashboard.index');
+        }
+
+        return redirect()->back()->withInput();
     }
 
     public function logout()
